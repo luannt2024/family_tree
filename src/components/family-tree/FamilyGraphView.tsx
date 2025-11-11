@@ -80,6 +80,49 @@ export const FamilyGraphView: React.FC = () => {
     return positions;
   }, [members, groups]);
 
+  // Compute per-family cluster bounding boxes (for SVG fallback outlines)
+  const clusterBoxes = useMemo(() => {
+    const pad = 28;
+    const boxes: Record<string, { x: number; y: number; width: number; height: number; count: number }> = {};
+
+    groups.forEach((g) => {
+      if (!g || g === 'ungrouped') return; // skip ungrouped
+      const nodesInGroup = members.filter(m => groupOf(m) === g);
+      if (nodesInGroup.length === 0) return;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nodesInGroup.forEach(n => {
+        const p = nodePositions[n.id];
+        if (!p) return;
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x + NODE_WIDTH);
+        maxY = Math.max(maxY, p.y + NODE_HEIGHT);
+      });
+
+      if (minX === Infinity) return;
+      const x = minX - pad;
+      const y = minY - pad;
+      const width = Math.max((maxX - minX) + pad * 2, NODE_WIDTH + pad * 2);
+      const height = Math.max((maxY - minY) + pad * 2, NODE_HEIGHT + pad * 2);
+
+      boxes[g] = { x, y, width, height, count: nodesInGroup.length };
+    });
+
+    return boxes;
+  }, [groups, members, nodePositions]);
+
+  // Simple deterministic cluster color generator
+  const getClusterColor = (id: string) => {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+    const hue = Math.abs(h) % 360;
+    return {
+      fill: `hsl(${hue}, 78%, 92%)`,
+      stroke: `hsl(${hue}, 60%, 45%)`
+    };
+  };
+
   // Compute canvas size
   const canvasWidth = Math.max(800, groups.length * (NODE_WIDTH + GAP_X) + MARGIN * 2);
   const numRows = Math.max(...members.map(m => {
@@ -215,6 +258,34 @@ export const FamilyGraphView: React.FC = () => {
             <path d="M0,0 L10,5 L0,10 z" fill="#4F46E5" />
           </marker>
         </defs>
+
+        {/* Render family cluster outlines (rounded rect + label) behind edges/nodes */}
+        {Object.entries(clusterBoxes).map(([cid, box]) => {
+          const color = getClusterColor(cid);
+          return (
+            <g key={`cluster-${cid}`}>
+              <rect
+                x={box.x}
+                y={box.y}
+                width={box.width}
+                height={box.height}
+                rx={12}
+                fill={color.fill}
+                stroke={color.stroke}
+                strokeWidth={1.5}
+                opacity={0.95}
+              />
+
+              {/* Cluster label */}
+              <g transform={`translate(${box.x + 12}, ${box.y + 18})`}>
+                <text fontSize={13} fill={color.stroke} fontWeight={600}>{cid}</text>
+                {/** Optionally show count */}
+                <text x={Math.max(120, 140)} fontSize={11} fill={color.stroke} opacity={0.8}>({box.count})</text>
+              </g>
+            </g>
+          );
+        })}
+
 
         {edges.map(edge => {
           const s = nodePositions[edge.sourceId];
