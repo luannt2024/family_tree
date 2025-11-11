@@ -11,7 +11,8 @@ import {
   DeletePersonAction,
   DeleteRelationAction,
   Gender,
-  RelationType
+  RelationType,
+  AddressingTitle
 } from '@/types';
 import { ValidationUtils } from '@/utils/validation';
 import { AddressingEngine } from '@/utils/addressing';
@@ -440,6 +441,75 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
 
       getRelationsByPersonId: (personId: string) => {
         return get().relations.filter(r => r.personAId === personId || r.personBId === personId);
+      },
+
+      // Tree helpers: build parent/child/spouse adjacency useful for tree layouts and addressing
+      getTreeHierarchy: () => {
+        const state = get();
+        const nodes: Record<string, { parents: string[]; children: string[]; spouses: string[] }> = {};
+
+        state.persons.forEach(p => {
+          nodes[p.id] = { parents: [], children: [], spouses: [] };
+        });
+
+        state.relations.forEach(r => {
+          if (r.type === RelationType.PARENT) {
+            if (r.parentId && r.childId) {
+              if (!nodes[r.parentId]) nodes[r.parentId] = { parents: [], children: [], spouses: [] };
+              if (!nodes[r.childId]) nodes[r.childId] = { parents: [], children: [], spouses: [] };
+              nodes[r.parentId].children.push(r.childId);
+              nodes[r.childId].parents.push(r.parentId);
+            } else {
+              // Fallback: try to infer direction by birth year when available
+              const a = state.persons.find(p => p.id === r.personAId);
+              const b = state.persons.find(p => p.id === r.personBId);
+              if (a && b && typeof a.birthYear === 'number' && typeof b.birthYear === 'number') {
+                if (a.birthYear < b.birthYear) {
+                  nodes[a.id].children.push(b.id);
+                  nodes[b.id].parents.push(a.id);
+                } else if (b.birthYear < a.birthYear) {
+                  nodes[b.id].children.push(a.id);
+                  nodes[a.id].parents.push(b.id);
+                } else {
+                  nodes[r.personAId].children.push(r.personBId);
+                  nodes[r.personBId].parents.push(r.personAId);
+                }
+              } else {
+                nodes[r.personAId].children.push(r.personBId);
+                nodes[r.personBId].parents.push(r.personAId);
+              }
+            }
+          } else if (r.type === RelationType.SPOUSE) {
+            if (!nodes[r.personAId]) nodes[r.personAId] = { parents: [], children: [], spouses: [] };
+            if (!nodes[r.personBId]) nodes[r.personBId] = { parents: [], children: [], spouses: [] };
+            nodes[r.personAId].spouses.push(r.personBId);
+            nodes[r.personBId].spouses.push(r.personAId);
+          }
+        });
+
+        return nodes;
+      },
+
+      getClusterMap: () => {
+        const state = get();
+        const map: Record<string, string[]> = {};
+
+        state.persons.forEach(p => {
+          (p.families || []).forEach(fid => {
+            if (!map[fid]) map[fid] = [];
+            map[fid].push(p.id);
+          });
+        });
+
+        state.relations.forEach(r => {
+          if (r.familyId) {
+            if (!map[r.familyId]) map[r.familyId] = [];
+            if (!map[r.familyId].includes(r.personAId)) map[r.familyId].push(r.personAId);
+            if (!map[r.familyId].includes(r.personBId)) map[r.familyId].push(r.personBId);
+          }
+        });
+
+        return map;
       },
 
       // Export/Import
