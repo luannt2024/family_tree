@@ -107,6 +107,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           const relationId = ValidationUtils.generateRelationId();
           let newRelation: Relation;
 
+          const now = new Date().toISOString();
           if (action.relationTo.relationType === RelationType.PARENT) {
             // Need to determine who is parent and who is child
             // For now, assume the existing person is parent
@@ -116,15 +117,19 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
               personAId: action.relationTo.personId,
               personBId: newPerson.id,
               parentId: action.relationTo.personId,
-              childId: newPerson.id
-            };
+              childId: newPerson.id,
+              createdAt: now,
+              updatedAt: now
+            } as Relation;
           } else {
             newRelation = {
               id: relationId,
               type: action.relationTo.relationType,
               personAId: action.relationTo.personId,
-              personBId: newPerson.id
-            };
+              personBId: newPerson.id,
+              createdAt: now,
+              updatedAt: now
+            } as Relation;
           }
 
           // Validate relation
