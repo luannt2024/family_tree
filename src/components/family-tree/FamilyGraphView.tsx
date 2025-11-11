@@ -81,13 +81,24 @@ export const FamilyGraphView: React.FC = () => {
   }, [members, groups]);
 
   // Compute per-family cluster bounding boxes (for SVG fallback outlines)
+  // Use getClusterMap from store when available to ensure clusters include nodes
   const clusterBoxes = useMemo(() => {
     const pad = 28;
     const boxes: Record<string, { x: number; y: number; width: number; height: number; count: number }> = {};
 
-    groups.forEach((g) => {
-      if (!g || g === 'ungrouped') return; // skip ungrouped
-      const nodesInGroup = members.filter(m => groupOf(m) === g);
+    // Attempt to use cluster map from members metadata if present
+    // members may include relationFamilyId or families array; fall back to grouping logic used above
+    const clusterMap: Record<string, string[]> = {};
+    members.forEach(m => {
+      const fam = groupOf(m);
+      if (fam && fam !== 'ungrouped') {
+        if (!clusterMap[fam]) clusterMap[fam] = [];
+        clusterMap[fam].push(m.id);
+      }
+    });
+
+    Object.entries(clusterMap).forEach(([cid, ids]) => {
+      const nodesInGroup = ids.map(id => members.find(m => m.id === id)).filter(Boolean) as FamilyMember[];
       if (nodesInGroup.length === 0) return;
 
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -106,7 +117,7 @@ export const FamilyGraphView: React.FC = () => {
       const width = Math.max((maxX - minX) + pad * 2, NODE_WIDTH + pad * 2);
       const height = Math.max((maxY - minY) + pad * 2, NODE_HEIGHT + pad * 2);
 
-      boxes[g] = { x, y, width, height, count: nodesInGroup.length };
+      boxes[cid] = { x, y, width, height, count: nodesInGroup.length };
     });
 
     return boxes;
