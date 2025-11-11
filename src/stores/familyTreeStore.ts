@@ -405,7 +405,11 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
         
         if (!state.userId) return [];
 
-        const addressingEngine = new AddressingEngine(state.persons, state.relations, state.userId);
+        const tree = (get as any)().getTreeHierarchy ? (get as any)().getTreeHierarchy() : undefined;
+        const clusterMap = (get as any)().getClusterMap ? (get as any)().getClusterMap() : undefined;
+        const addressingEngine = new AddressingEngine(state.persons, state.relations, state.userId as string, tree, clusterMap);
+
+
         
         return state.persons.map(person => {
           const addressing = addressingEngine.calculateAddressing(person.id);
