@@ -3,6 +3,9 @@ import { useFamilyTreeStore } from '@/stores/familyTreeStore';
 import { FamilyMember, RelationType } from '@/types';
 import { GraphNode } from './GraphNode';
 
+// Optional: we will try to integrate a force-directed layout using reactflow when available.
+// Keep a fallback grid layout so the component works without additional deps during dev.
+
 const NODE_WIDTH = 140;
 const NODE_HEIGHT = 56;
 const GAP_X = 80;
@@ -12,6 +15,7 @@ const MARGIN = 40;
 export const FamilyGraphView: React.FC = () => {
   const { getFamilyMembers, relations, selectPerson, selectedPersonId } = useFamilyTreeStore();
   const members = getFamilyMembers();
+  const [useForce, setUseForce] = useState(false);
 
   // Determine grouping for layout: prefer the first family entry of a person, otherwise 'ungrouped'
   const groupOf = (m: FamilyMember) => {
@@ -31,7 +35,7 @@ export const FamilyGraphView: React.FC = () => {
     return Array.from(set.keys());
   }, [members]);
 
-  // Node positions
+  // Node positions (fallback grid layout)
   const nodePositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
 
@@ -107,8 +111,18 @@ export const FamilyGraphView: React.FC = () => {
     }
   };
 
+  // Enhanced SVG rendering: draw bezier curves for edges and show an interactive hover tooltip
+  const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
+
   return (
     <div className="relative w-full h-full bg-transparent" style={{ minHeight: canvasHeight }}>
+      <div className="flex items-center space-x-2 p-2">
+        <label className="inline-flex items-center space-x-2 text-sm">
+          <input type="checkbox" checked={useForce} onChange={(e) => setUseForce(e.target.checked)} />
+          <span>Sử dụng layout force-directed (reactflow nếu có)</span>
+        </label>
+      </div>
+
       <svg className="absolute inset-0 w-full h-full" width={canvasWidth} height={canvasHeight}>
         <defs>
           <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
@@ -126,24 +140,43 @@ export const FamilyGraphView: React.FC = () => {
           const y2 = t.y + NODE_HEIGHT / 2;
           const color = getEdgeColor(edge.type);
 
+          // Compute simple bezier control points to curve edges away from overlapping
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const qx = x1 + dx * 0.5 - dy * 0.15;
+          const qy = y1 + dy * 0.5 + dx * 0.05;
+          const pathD = `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`;
+
           return (
-            <g key={edge.id}>
-              <line
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
+            <g key={edge.id} onMouseEnter={() => setHoveredEdge(edge.id)} onMouseLeave={() => setHoveredEdge(null)}>
+              <path
+                d={pathD}
+                fill="none"
                 stroke={color}
                 strokeWidth={2}
                 markerEnd={edge.type === RelationType.PARENT ? 'url(#arrow)' : undefined}
                 strokeLinecap="round"
-                opacity={0.9}
+                opacity={hoveredEdge === edge.id ? 1 : 0.85}
               />
 
               {edge.label && (
-                <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 - 8} fontSize={12} textAnchor="middle" fill="#111" style={{ pointerEvents: 'none' }}>
-                  {edge.label}
+                <text>
+                  <textPath href={`#${edge.id}-path`} startOffset="50%" textAnchor="middle" fontSize={12} fill="#111">
+                    {edge.label}
+                  </textPath>
                 </text>
+              )}
+
+              {/* Hidden anchor path so textPath can reference it */}
+              <path id={`${edge.id}-path`} d={pathD} fill="none" stroke="transparent" />
+
+              {hoveredEdge === edge.id && (
+                <foreignObject x={(x1 + x2) / 2 - 80} y={(y1 + y2) / 2 - 40} width={160} height={80} style={{ pointerEvents: 'none' }}>
+                  <div className="bg-white dark:bg-gray-800 p-2 rounded shadow text-xs text-gray-800 dark:text-gray-200">
+                    <div><strong>{edge.label || edge.type}</strong></div>
+                    {edge.familyId && <div className="text-gray-500 text-xs">Gia đình: {edge.familyId}</div>}
+                  </div>
+                </foreignObject>
               )}
             </g>
           );
