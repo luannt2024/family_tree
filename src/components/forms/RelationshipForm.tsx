@@ -34,14 +34,24 @@ export const RelationshipForm: React.FC<RelationshipFormProps> = ({
   // Get available persons (exclude current person)
   const availablePersons = persons.filter(p => p.id !== person?.id);
 
+  // New fields for detailed label and family cluster (kept minimal to match NewRelationshipForm)
+  const [selectedLabel, setSelectedLabel] = useState<string>('');
+  const [customLabel, setCustomLabel] = useState<string>('');
+  const [familyIdInput, setFamilyIdInput] = useState<string>('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!person || !selectedPersonId) return;
 
     setIsSubmitting(true);
     try {
-      // Legacy flow: no extra options
-      createRelationship(person.id, selectedPersonId, relationType);
+      const finalLabel = selectedLabel === '__other' ? (customLabel.trim() || undefined) : (selectedLabel || undefined);
+      const options = {
+        label: finalLabel,
+        familyId: familyIdInput.trim() || undefined
+      };
+
+      createRelationship(person.id, selectedPersonId, relationType, options);
       showToast.success('Đã tạo quan hệ gia đình thành công!');
       onClose();
     } catch (error) {
@@ -212,6 +222,41 @@ export const RelationshipForm: React.FC<RelationshipFormProps> = ({
           >
             {isSubmitting ? 'Đang thêm...' : 'Thêm quan hệ'}
           </Button>
+        </div>
+
+        {/* Minimal inputs for label and family cluster (placed after actions to avoid UI churn) */}
+        <div className="mt-4 space-y-3">
+          <label className="block text-sm font-medium text-gray-700">Danh xưng cụ thể (tùy chọn)</label>
+          <select
+            value={selectedLabel}
+            onChange={(e) => setSelectedLabel(e.target.value)}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Tự động (gợi ý)</option>
+            <option value="Anh">Anh</option>
+            <option value="Chị">Chị</option>
+            <option value="Em">Em</option>
+            <option value="__other">Khác (nhập tay)</option>
+          </select>
+          {selectedLabel === '__other' && (
+            <input
+              type="text"
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              placeholder="Ví dụ: Cô ruột, Cô (vợ chú), Thím..."
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          )}
+
+          <label className="block text-sm font-medium text-gray-700">Nhóm/Gia đình (tùy chọn)</label>
+          <input
+            type="text"
+            value={familyIdInput}
+            onChange={(e) => setFamilyIdInput(e.target.value)}
+            placeholder="Tên nhóm/gia đình (ví dụ: Gia đình bác 5)"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
         </div>
       </form>
     </Modal>
