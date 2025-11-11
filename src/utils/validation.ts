@@ -108,6 +108,27 @@ export class ValidationUtils {
       // For now, just ensure both persons exist (already validated above)
     }
 
+    // Validate label for custom relations
+    if (relation.type === RelationType.CUSTOM) {
+      if (!relation.label || typeof relation.label !== 'string' || relation.label.trim().length === 0) {
+        errors.push({ field: 'label', message: 'Danh xưng tuỳ chỉnh là bắt buộc cho quan hệ loại "Khác"' });
+      } else if ((relation.label as string).length > 100) {
+        errors.push({ field: 'label', message: 'Danh xưng không được vượt quá 100 ký tự' });
+      }
+    } else {
+      // If label is provided for known types, ensure it's a reasonable string
+      if (relation.label && typeof relation.label === 'string' && (relation.label as string).length > 100) {
+        errors.push({ field: 'label', message: 'Danh xưng không được vượt quá 100 ký tự' });
+      }
+    }
+
+    // Validate familyId if provided
+    if (relation.familyId && typeof relation.familyId === 'string' && relation.familyId.trim().length > 0) {
+      if (relation.familyId.length > 100) {
+        errors.push({ field: 'familyId', message: 'Tên nhóm/gia đình không được vượt quá 100 ký tự' });
+      }
+    }
+
     return errors;
   }
 
