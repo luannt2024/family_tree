@@ -23,7 +23,7 @@ interface FamilyTreeStore extends FamilyTreeState {
   deletePerson: (action: DeletePersonAction) => void;
   addRelation: (action: AddRelationAction) => void;
   deleteRelation: (action: DeleteRelationAction) => void;
-  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType) => void;
+  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string; subjectId?: string }) => void;
   
   // User management
   setUser: (personId: string) => void;
@@ -257,7 +257,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
         });
       },
 
-      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType) => {
+      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string; subjectId?: string }) => {
         const state = get();
         
         // Validate that both persons exist
@@ -275,8 +275,11 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           personAId,
           personBId,
           type: relationshipType,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          label: options?.label,
+          familyId: options?.familyId,
+          subjectId: options?.subjectId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
 
         // Validate relation
@@ -301,6 +304,19 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           relations: [...state.relations, newRelation],
           error: null
         });
+
+        // Update families arrays on persons if familyId provided
+        if (options?.familyId) {
+          const persons = state.persons.map(p => {
+            if (p.id === personAId || p.id === personBId) {
+              const newFamilies = Array.from(new Set([...(p.families || []), options.familyId!]));
+              return { ...p, families: newFamilies };
+            }
+            return p;
+          });
+
+          set({ persons });
+        }
       },
 
       // User management
