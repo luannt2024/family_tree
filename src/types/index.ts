@@ -67,6 +67,9 @@ export interface Person {
   avatar?: string;
   notes?: string;
   isUser?: boolean; // Đánh dấu người dùng chính (điểm quy chiếu)
+
+  // Nhóm/gia đình (tùy chọn) - dùng để phân cụm cây gia phả
+  families?: string[];
   
   // Metadata cho UI
   position?: { x: number; y: number };
