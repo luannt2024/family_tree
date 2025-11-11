@@ -1,10 +1,21 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useFamilyTreeStore } from '@/stores/familyTreeStore';
 import { FamilyMember, RelationType } from '@/types';
 import { GraphNode } from './GraphNode';
 
-// Optional: we will try to integrate a force-directed layout using reactflow when available.
-// Keep a fallback grid layout so the component works without additional deps during dev.
+// React Flow integration (optional): will be used when user toggles force layout.
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  MarkerType,
+  useNodesState,
+  useEdgesState,
+  addEdge as rfAddEdge,
+} from 'reactflow';
+import { ReactFlowGraphNode } from './ReactFlowGraphNode';
+
+// ensure reactflow css is imported by the app's root; if not, users should add `import 'reactflow/dist/style.css'`.
 
 const NODE_WIDTH = 140;
 const NODE_HEIGHT = 56;
@@ -111,8 +122,67 @@ export const FamilyGraphView: React.FC = () => {
     }
   };
 
-  // Enhanced SVG rendering: draw bezier curves for edges and show an interactive hover tooltip
+  // React Flow nodes/edges (used when useForce is true)
+  const initialRfNodes = useMemo(() => members.map(m => ({
+    id: m.id,
+    type: 'graphNode',
+    data: { member: m },
+    position: nodePositions[m.id] || { x: MARGIN, y: MARGIN },
+    draggable: true,
+    style: { width: NODE_WIDTH, height: NODE_HEIGHT }
+  })), [members, nodePositions]);
+
+  const initialRfEdges = useMemo(() => edges.map(e => ({
+    id: e.id,
+    source: e.sourceId,
+    target: e.targetId,
+    label: e.label || undefined,
+    animated: false,
+    style: { stroke: getEdgeColor(e.type) },
+    arrowHeadType: e.type === RelationType.PARENT ? MarkerType.ArrowClosed : undefined
+  })), [edges]);
+
+  const [rfNodes, setRfNodes, onNodesChange] = useNodesState(initialRfNodes as any);
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState(initialRfEdges as any);
+
+  // Keep nodes/edges in sync if members/relations change
+  useEffect(() => {
+    setRfNodes(initialRfNodes as any);
+  }, [initialRfNodes, setRfNodes]);
+
+  useEffect(() => {
+    setRfEdges(initialRfEdges as any);
+  }, [initialRfEdges, setRfEdges]);
+
+  const onConnect = useCallback((params) => setRfEdges((eds) => rfAddEdge({ ...params, animated: false }, eds)), [setRfEdges]);
+
+  // Enhanced SVG rendering: draw bezier curves for edges and show an interactive hover tooltip (fallback grid mode)
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
+
+  if (useForce) {
+    return (
+      <div className="w-full h-[700px]">
+        <div className="flex items-center space-x-2 p-2">
+          <button className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-sm" onClick={() => setUseForce(false)}>Use SVG fallback</button>
+        </div>
+
+        <ReactFlow
+          nodes={rfNodes as any}
+          edges={rfEdges as any}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          fitView
+          nodeTypes={{ graphNode: ReactFlowGraphNode }}
+          nodesDraggable
+        >
+          <Background />
+          <Controls />
+          <MiniMap nodeStrokeColor={() => '#888'} nodeColor={() => '#ddd'} />
+        </ReactFlow>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full bg-transparent" style={{ minHeight: canvasHeight }}>
