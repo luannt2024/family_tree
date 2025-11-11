@@ -12,11 +12,85 @@ export class AddressingEngine {
   private persons: Person[];
   private relations: Relation[];
   private userId: string;
+  private tree: Record<string, { parents: string[]; children: string[]; spouses: string[] }>;
+  private clusterMap: Record<string, string[]>;
 
-  constructor(persons: Person[], relations: Relation[], userId: string) {
+  constructor(
+    persons: Person[],
+    relations: Relation[],
+    userId: string,
+    tree?: Record<string, { parents: string[]; children: string[]; spouses: string[] }>,
+    clusterMap?: Record<string, string[]>
+  ) {
     this.persons = persons;
     this.relations = relations;
     this.userId = userId;
+
+    // Use provided tree if available, otherwise build from relations/persons
+    if (tree) {
+      this.tree = tree;
+    } else {
+      this.tree = {};
+      this.persons.forEach(p => {
+        this.tree[p.id] = { parents: [], children: [], spouses: [] };
+      });
+
+      this.relations.forEach(r => {
+        if (r.type === RelationType.PARENT) {
+          if (r.parentId && r.childId) {
+            if (!this.tree[r.parentId]) this.tree[r.parentId] = { parents: [], children: [], spouses: [] };
+            if (!this.tree[r.childId]) this.tree[r.childId] = { parents: [], children: [], spouses: [] };
+            this.tree[r.parentId].children.push(r.childId);
+            this.tree[r.childId].parents.push(r.parentId);
+          } else {
+            const a = this.persons.find(p => p.id === r.personAId);
+            const b = this.persons.find(p => p.id === r.personBId);
+            if (a && b && typeof a.birthYear === 'number' && typeof b.birthYear === 'number') {
+              if (a.birthYear < b.birthYear) {
+                if (!this.tree[a.id]) this.tree[a.id] = { parents: [], children: [], spouses: [] };
+                if (!this.tree[b.id]) this.tree[b.id] = { parents: [], children: [], spouses: [] };
+                this.tree[a.id].children.push(b.id);
+                this.tree[b.id].parents.push(a.id);
+              } else {
+                if (!this.tree[b.id]) this.tree[b.id] = { parents: [], children: [], spouses: [] };
+                if (!this.tree[a.id]) this.tree[a.id] = { parents: [], children: [], spouses: [] };
+                this.tree[b.id].children.push(a.id);
+                this.tree[a.id].parents.push(b.id);
+              }
+            } else {
+              if (!this.tree[r.personAId]) this.tree[r.personAId] = { parents: [], children: [], spouses: [] };
+              if (!this.tree[r.personBId]) this.tree[r.personBId] = { parents: [], children: [], spouses: [] };
+              this.tree[r.personAId].children.push(r.personBId);
+              this.tree[r.personBId].parents.push(r.personAId);
+            }
+          }
+        } else if (r.type === RelationType.SPOUSE) {
+          if (!this.tree[r.personAId]) this.tree[r.personAId] = { parents: [], children: [], spouses: [] };
+          if (!this.tree[r.personBId]) this.tree[r.personBId] = { parents: [], children: [], spouses: [] };
+          this.tree[r.personAId].spouses.push(r.personBId);
+          this.tree[r.personBId].spouses.push(r.personAId);
+        }
+      });
+    }
+
+    this.clusterMap = clusterMap || {};
+    if (!clusterMap) {
+      const map: Record<string, string[]> = {};
+      this.persons.forEach(p => {
+        (p.families || []).forEach(fid => {
+          if (!map[fid]) map[fid] = [];
+          map[fid].push(p.id);
+        });
+      });
+      this.relations.forEach(r => {
+        if (r.familyId) {
+          if (!map[r.familyId]) map[r.familyId] = [];
+          if (!map[r.familyId].includes(r.personAId)) map[r.familyId].push(r.personAId);
+          if (!map[r.familyId].includes(r.personBId)) map[r.familyId].push(r.personBId);
+        }
+      });
+      this.clusterMap = map;
+    }
   }
 
   /**
