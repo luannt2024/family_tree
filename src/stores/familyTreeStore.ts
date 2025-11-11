@@ -324,10 +324,11 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
 
         // If familyId provided, tag affected persons with that family cluster
         if (options?.familyId) {
+          const fid = options.familyId!;
           const updatedPersons = state.persons.map(p => {
             if (p.id === personAId || p.id === personBId) {
-              const families = (p as any).families || [];
-              if (!families.includes(options.familyId!)) families.push(options.familyId!);
+              const families = Array.isArray(p.families) ? [...p.families] : [];
+              if (!families.includes(fid)) families.push(fid);
               return { ...p, families };
             }
             return p;
