@@ -95,10 +95,11 @@ export interface Relation {
   // Metadata
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AddressingInfo {
-  title: AddressingTitle;
+  title: AddressingTitle | string;
   explanation: string;
   greetingExamples: string[];
   lineage: LineageType | null;

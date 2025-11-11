@@ -40,6 +40,7 @@ export const RelationshipForm: React.FC<RelationshipFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Legacy flow: no extra options
       createRelationship(person.id, selectedPersonId, relationType);
       showToast.success('Đã tạo quan hệ gia đình thành công!');
       onClose();
