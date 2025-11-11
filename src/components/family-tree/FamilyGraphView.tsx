@@ -259,6 +259,34 @@ export const FamilyGraphView: React.FC = () => {
           </marker>
         </defs>
 
+        {/* Render family cluster outlines (rounded rect + label) behind edges/nodes */}
+        {Object.entries(clusterBoxes).map(([cid, box]) => {
+          const color = getClusterColor(cid);
+          return (
+            <g key={`cluster-${cid}`}>
+              <rect
+                x={box.x}
+                y={box.y}
+                width={box.width}
+                height={box.height}
+                rx={12}
+                fill={color.fill}
+                stroke={color.stroke}
+                strokeWidth={1.5}
+                opacity={0.95}
+              />
+
+              {/* Cluster label */}
+              <g transform={`translate(${box.x + 12}, ${box.y + 18})`}>
+                <text fontSize={13} fill={color.stroke} fontWeight={600}>{cid}</text>
+                {/** Optionally show count */}
+                <text x={Math.max(120, 140)} fontSize={11} fill={color.stroke} opacity={0.8}>({box.count})</text>
+              </g>
+            </g>
+          );
+        })}
+
+
         {edges.map(edge => {
           const s = nodePositions[edge.sourceId];
           const t = nodePositions[edge.targetId];
