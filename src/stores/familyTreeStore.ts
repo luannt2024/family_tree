@@ -262,7 +262,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
         });
       },
 
-      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string }) => {
+      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string; subjectId?: string }) => {
         const state = get();
         
         // Validate that both persons exist
@@ -282,6 +282,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           type: relationshipType,
           label: options?.label,
           familyId: options?.familyId,
+          subjectId: options?.subjectId,
           createdAt: new Date().toISOString()
         } as Relation;
 
