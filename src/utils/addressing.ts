@@ -49,6 +49,11 @@ export class AddressingEngine {
     return this.analyzeRelationPath(relationPath);
   }
 
+  // Public helper to retrieve the raw relation path (chuỗi id quan hệ) between two persons
+  public getRelationPath(fromId: string, toId: string): string[] | null {
+    return this.findRelationPath(fromId, toId);
+  }
+
   /**
    * Tìm đường đi quan hệ từ user đến person
    */

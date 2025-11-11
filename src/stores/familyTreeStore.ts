@@ -23,7 +23,7 @@ interface FamilyTreeStore extends FamilyTreeState {
   deletePerson: (action: DeletePersonAction) => void;
   addRelation: (action: AddRelationAction) => void;
   deleteRelation: (action: DeleteRelationAction) => void;
-  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType) => void;
+  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string }) => void;
   
   // User management
   setUser: (personId: string) => void;
@@ -257,7 +257,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
         });
       },
 
-      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType) => {
+      createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string }) => {
         const state = get();
         
         // Validate that both persons exist
@@ -275,9 +275,27 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           personAId,
           personBId,
           type: relationshipType,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+          label: options?.label,
+          familyId: options?.familyId,
+          createdAt: new Date().toISOString()
+        } as Relation;
+
+        // If it's a parent relation, try to determine parent/child direction
+        if (relationshipType === RelationType.PARENT) {
+          // If personAId is the parent of personBId, set parent/child accordingly; otherwise, try to infer by birthYear if available
+          // Default: treat personA as parent and personB as child
+          newRelation.parentId = personA.id;
+          newRelation.childId = personB.id;
+
+          // Attempt to refine using birthYear
+          if (personA.birthYear && personB.birthYear) {
+            if (personA.birthYear > personB.birthYear) {
+              // If A is younger than B, swap
+              newRelation.parentId = personB.id;
+              newRelation.childId = personA.id;
+            }
+          }
+        }
 
         // Validate relation
         const errors = ValidationUtils.validateRelation(newRelation, state.persons);
@@ -286,7 +304,7 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           return;
         }
 
-        // Check for duplicate relations
+        // Check for duplicate relations (considering label/familyId as well)
         const isDuplicate = state.relations.some(r => 
           (r.personAId === newRelation.personAId && r.personBId === newRelation.personBId && r.type === newRelation.type) ||
           (r.personAId === newRelation.personBId && r.personBId === newRelation.personAId && r.type === newRelation.type)
@@ -297,10 +315,24 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           return;
         }
 
-        set({
-          relations: [...state.relations, newRelation],
-          error: null
-        });
+        const newRelations = [...state.relations, newRelation];
+
+        // If familyId provided, tag affected persons with that family cluster
+        if (options?.familyId) {
+          const updatedPersons = state.persons.map(p => {
+            if (p.id === personAId || p.id === personBId) {
+              const families = (p as any).families || [];
+              if (!families.includes(options.familyId!)) families.push(options.familyId!);
+              return { ...p, families };
+            }
+            return p;
+          });
+
+          set({ relations: newRelations, persons: updatedPersons, error: null });
+          return;
+        }
+
+        set({ relations: newRelations, error: null });
       },
 
       // User management

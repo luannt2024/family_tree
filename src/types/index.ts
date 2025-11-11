@@ -8,7 +8,8 @@ export enum Gender {
 export enum RelationType {
   PARENT = 'parent',
   SPOUSE = 'spouse',
-  SIBLING = 'sibling'
+  SIBLING = 'sibling',
+  CUSTOM = 'custom' // Cho quan hệ tùy chỉnh (cô ruột, thím, ...)
 }
 
 export enum AddressingTitle {
@@ -81,6 +82,12 @@ export interface Relation {
   // Cho parent relation
   parentId?: string;
   childId?: string;
+
+  // Thông tin mô tả chi tiết (ví dụ: 'Anh', 'Chị', 'Cô ruột', 'Thím', ...)
+  label?: AddressingTitle | string;
+
+  // Nhóm gia đình / family cluster id (ví dụ: 'Gia đình bác 5')
+  familyId?: string;
   
   // Metadata
   notes?: string;
@@ -100,6 +107,7 @@ export interface FamilyMember extends Person {
   addressing: AddressingInfo;
   relationPath: string[]; // Đường đi từ user đến person này
   directRelation?: RelationType;
+  families?: string[]; // Danh sách các nhóm/gia đình (family cluster) người này thuộc về
 }
 
 // Store interfaces
