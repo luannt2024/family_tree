@@ -346,10 +346,10 @@ export const FamilyTreeView: React.FC = () => {
                 <FamilyGraphView />
               </div>
             ) : (
-            {familyMembers.length === 0 && (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              familyMembers.length === 0 && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
                     Chưa có thành viên nào trong gia phả
                   </p>
