@@ -202,6 +202,21 @@ export const PersonCard: React.FC<PersonCardProps> = ({
         </div>
       )}
 
+      {/* Direct relation label & family cluster badge */}
+      <div className="px-4 pb-2 flex items-center space-x-2">
+        {person.directRelationLabel && (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+            {person.directRelationLabel}
+          </span>
+        )}
+
+        {person.relationFamilyId && (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            {person.relationFamilyId}
+          </span>
+        )}
+      </div>
+
       {/* Action buttons */}
       <div className="flex items-center justify-end space-x-1 p-2 border-t border-gray-200 dark:border-gray-700">
         {onAddRelation && (

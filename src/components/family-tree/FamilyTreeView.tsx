@@ -16,6 +16,7 @@ import { useFamilyTreeStore } from '@/stores/familyTreeStore';
 import { PersonForm } from '@/components/forms/PersonForm';
 import { NewRelationshipForm } from '@/components/forms/NewRelationshipForm';
 import { PersonCard } from './PersonCard';
+import { FamilyGraphView } from './FamilyGraphView';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { showToast } from '@/components/ui/Toast';
@@ -46,6 +47,7 @@ export const FamilyTreeView: React.FC = () => {
   } = useFamilyTreeStore();
 
   const [isPersonFormOpen, setIsPersonFormOpen] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
   const [editingPerson, setEditingPerson] = useState<FamilyMember | null>(null);
   const [isRelationshipFormOpen, setIsRelationshipFormOpen] = useState(false);
   const [relationshipPerson, setRelationshipPerson] = useState<FamilyMember | null>(null);
@@ -339,6 +341,11 @@ export const FamilyTreeView: React.FC = () => {
               ))}
             </div>
 
+            {showGraph ? (
+              <div className="mt-6">
+                <FamilyGraphView />
+              </div>
+            ) : (
             {familyMembers.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">

@@ -111,7 +111,7 @@ export class AddressingEngine {
   /**
    * Phân tích đường đi quan hệ để xác định danh xưng
    */
-  private analyzeRelationPath(relationPath: string[]): AddressingInfo {
+    private analyzeRelationPath(relationPath: string[]): AddressingInfo {
     if (relationPath.length === 0) {
       return {
         title: AddressingTitle.UNKNOWN,
@@ -122,6 +122,85 @@ export class AddressingEngine {
         confidence: 1.0
       };
     }
+
+    // Build enriched steps with context (fromId -> toId) and sibling age hints
+    let currentPersonId = this.userId;
+    type EnrichedStep = { relation: Relation; type: RelationType; isOlder?: boolean; fromId: string; toId: string };
+    const steps: EnrichedStep[] = [];
+
+    for (const relationId of relationPath) {
+      const relation = this.relations.find(r => r.id === relationId)!;
+      const nextPersonId = relation.personAId === currentPersonId ? relation.personBId : relation.personAId;
+
+      let isOlder: boolean | undefined = undefined;
+      if (relation.type === RelationType.SIBLING) {
+        const cur = this.persons.find(p => p.id === currentPersonId);
+        const next = this.persons.find(p => p.id === nextPersonId);
+        if (cur?.birthYear !== undefined && next?.birthYear !== undefined) {
+          // nextPerson is older if their birthYear is less (born earlier)
+          isOlder = next.birthYear < cur.birthYear;
+        }
+      }
+
+      steps.push({ relation, type: relation.type, isOlder, fromId: currentPersonId, toId: nextPersonId });
+      currentPersonId = nextPersonId;
+    }
+
+    // Compute generation and lineage similar to previous logic
+    let generation = 0;
+    let lineage: LineageType | null = null;
+    currentPersonId = this.userId;
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const relation = step.relation;
+      const nextPersonId = step.toId;
+
+      if (step.type === RelationType.PARENT) {
+        if (relation.childId === currentPersonId) {
+          generation++; // up a generation
+        } else {
+          generation--; // down a generation
+        }
+      }
+
+      if (i === 0 && step.type === RelationType.PARENT && relation.childId === currentPersonId) {
+        const parent = this.persons.find(p => p.id === nextPersonId);
+        if (parent) {
+          const userPerson = this.persons.find(p => p.id === this.userId);
+          if (userPerson) {
+            lineage = this.determineLineage(parent, userPerson);
+          }
+        }
+      }
+
+      currentPersonId = nextPersonId;
+    }
+
+    // Target person is the last person reached
+    const targetPerson = this.persons.find(p => p.id === currentPersonId)!;
+
+    // Prefer stored label on the last (direct) relation if it applies to the target
+    const lastStep = steps[steps.length - 1];
+    const lastRelation = lastStep.relation;
+    if (lastRelation.label) {
+      // If subjectId is not set, assume the stored label applies to the relation (user intent)
+      if (!lastRelation.subjectId || lastRelation.subjectId === targetPerson.id) {
+        return this.createAddressingInfo(
+          lastRelation.label as any,
+          `Quan hệ trực tiếp: ${String(lastRelation.label)}`,
+          lineage,
+          generation
+        );
+      }
+      // If subjectId exists and does not match targetPerson, fall through to derived logic
+    }
+
+    // Map to simple step summary for backward-compatible complex analysis
+    const simpleSteps = steps.map(s => ({ type: s.type, isOlder: s.isOlder }));
+
+    return this.determineAddressingTitle(simpleSteps, generation, lineage, targetPerson);
+  }
 
     // Phân tích từng bước trong đường đi
     const steps = relationPath.map(relationId => {

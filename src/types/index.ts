@@ -86,6 +86,9 @@ export interface Relation {
   parentId?: string;
   childId?: string;
 
+  // Ai là người chủ đạo trong quan hệ (tuỳ chọn) - giúp xác định hướng khi cần
+  subjectId?: string;
+
   // Thông tin mô tả chi tiết (ví dụ: 'Anh', 'Chị', 'Cô ruột', 'Thím', ...)
   label?: AddressingTitle | string;
 
@@ -111,6 +114,8 @@ export interface FamilyMember extends Person {
   addressing: AddressingInfo;
   relationPath: string[]; // Đường đi từ user đến person này
   directRelation?: RelationType;
+  directRelationLabel?: string; // Ghi nhãn quan hệ trực tiếp (nếu có)
+  relationFamilyId?: string; // family cluster id for the direct relation
   families?: string[]; // Danh sách các nhóm/gia đình (family cluster) người này thuộc về
 }
 
