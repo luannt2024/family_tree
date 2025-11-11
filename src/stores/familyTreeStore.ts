@@ -23,7 +23,7 @@ interface FamilyTreeStore extends FamilyTreeState {
   deletePerson: (action: DeletePersonAction) => void;
   addRelation: (action: AddRelationAction) => void;
   deleteRelation: (action: DeleteRelationAction) => void;
-  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string }) => void;
+  createRelationship: (personAId: string, personBId: string, relationshipType: RelationType, options?: { label?: string; familyId?: string; subjectId?: string }) => void;
   
   // User management
   setUser: (personId: string) => void;
