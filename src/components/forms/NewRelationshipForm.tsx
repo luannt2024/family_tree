@@ -21,11 +21,19 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
   const [relationType, setRelationType] = useState<RelationType>(RelationType.PARENT);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Detailed label and family cluster
+  const [selectedLabel, setSelectedLabel] = useState<string>('');
+  const [customLabel, setCustomLabel] = useState<string>('');
+  const [familyId, setFamilyId] = useState<string>('');
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setSelectedPersonId('');
       setRelationType(RelationType.PARENT);
+      setSelectedLabel('');
+      setCustomLabel('');
+      setFamilyId('');
     }
   }, [isOpen]);
 
@@ -41,7 +49,13 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      createRelationship(person.id, selectedPersonId, relationType);
+      const finalLabel = selectedLabel === '__other' ? (customLabel.trim() || undefined) : (selectedLabel || undefined);
+      const options = {
+        label: finalLabel,
+        familyId: familyId.trim() || undefined
+      };
+
+      createRelationship(person.id, selectedPersonId, relationType, options);
       showToast.success('Đã tạo quan hệ gia đình thành công!');
       onClose();
     } catch (error) {
@@ -56,7 +70,21 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
     { value: RelationType.PARENT, label: 'Cha/Mẹ - Con' },
     { value: RelationType.SPOUSE, label: 'Vợ/Chồng' },
     { value: RelationType.SIBLING, label: 'Anh/Chị/Em' },
+    { value: RelationType.CUSTOM, label: 'Khác (tùy chỉnh)' }
   ];
+
+  const labelOptionsForType = (type: RelationType) => {
+    switch (type) {
+      case RelationType.PARENT:
+        return [{ value: 'Ba', label: 'Ba' }, { value: 'Mẹ', label: 'Mẹ' }, { value: 'Con', label: 'Con' }];
+      case RelationType.SPOUSE:
+        return [{ value: 'Chồng', label: 'Chồng' }, { value: 'Vợ', label: 'Vợ' }];
+      case RelationType.SIBLING:
+        return [{ value: 'Anh', label: 'Anh' }, { value: 'Chị', label: 'Chị' }, { value: 'Em', label: 'Em' }];
+      default:
+        return [];
+    }
+  };
 
   const personOptions = availablePersons.map(p => ({
     value: p.id,
@@ -113,6 +141,46 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Detailed label */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Danh xưng cụ thể (tùy chọn)</label>
+            <div className="grid grid-cols-1 gap-2">
+              <select
+                value={selectedLabel}
+                onChange={(e) => setSelectedLabel(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">Tự động (gợi ý từ hệ thống)</option>
+                {labelOptionsForType(relationType).map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+                <option value="__other">Khác (nhập tay)</option>
+              </select>
+
+              {selectedLabel === '__other' && (
+                <input
+                  type="text"
+                  value={customLabel}
+                  onChange={(e) => setCustomLabel(e.target.value)}
+                  placeholder="Ví dụ: Cô ruột, Cô (vợ chú), Thím..."
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Family cluster */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nhóm / Gia đình (tùy chọn)</label>
+            <input
+              type="text"
+              value={familyId}
+              onChange={(e) => setFamilyId(e.target.value)}
+              placeholder="Ví dụ: Gia đình bác 5, Gia đình cô 10"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            />
           </div>
         </div>
 
