@@ -408,12 +408,28 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
         
         return state.persons.map(person => {
           const addressing = addressingEngine.calculateAddressing(person.id);
-          const relationPath = person.id === state.userId ? [] : ['path']; // Simplified
-          
+          const relationPath = addressingEngine.getRelationPath(state.userId as string, person.id) || [];
+
+          // If there's a direct relation between the user and this person, surface its label and familyId
+          const directRelation = state.relations.find(r => 
+            (r.personAId === state.userId && r.personBId === person.id) ||
+            (r.personBId === state.userId && r.personAId === person.id)
+          );
+
+          const directRelationLabel = directRelation?.label;
+          const relationFamilyId = directRelation?.familyId;
+
+          const families = person.families && person.families.length > 0
+            ? person.families
+            : (relationFamilyId ? [relationFamilyId] : []);
+
           return {
             ...person,
             addressing,
-            relationPath
+            relationPath,
+            directRelationLabel,
+            relationFamilyId,
+            families
           } as FamilyMember;
         });
       },
