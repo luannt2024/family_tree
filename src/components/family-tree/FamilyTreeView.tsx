@@ -341,6 +341,11 @@ export const FamilyTreeView: React.FC = () => {
               ))}
             </div>
 
+            {showGraph ? (
+              <div className="mt-6">
+                <FamilyGraphView />
+              </div>
+            ) : (
             {familyMembers.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
