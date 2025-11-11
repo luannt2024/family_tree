@@ -24,7 +24,7 @@ const GAP_Y = 28;
 const MARGIN = 40;
 
 export const FamilyGraphView: React.FC = () => {
-  const { getFamilyMembers, relations, selectPerson, selectedPersonId } = useFamilyTreeStore();
+  const { getFamilyMembers, relations, selectPerson, selectedPersonId, updatePerson } = useFamilyTreeStore();
   const members = getFamilyMembers();
   const [useForce, setUseForce] = useState(false);
 
@@ -172,6 +172,15 @@ export const FamilyGraphView: React.FC = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDragStop={(_event, node) => {
+            // Persist node position back to the store so positions survive reloads
+            try {
+              updatePerson({ personId: node.id, updates: { position: { x: Math.round(node.position.x), y: Math.round(node.position.y) } } });
+            } catch (err) {
+              // swallow errors; store may not be ready in some test contexts
+              // console.warn('Failed to persist node position', err);
+            }
+          }}
           fitView
           nodeTypes={{ graphNode: ReactFlowGraphNode }}
           nodesDraggable
