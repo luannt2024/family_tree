@@ -202,58 +202,8 @@ export class AddressingEngine {
     return this.determineAddressingTitle(simpleSteps, generation, lineage, targetPerson);
   }
 
-    // Phân tích từng bước trong đường đi
-    const steps = relationPath.map(relationId => {
-      const relation = this.relations.find(r => r.id === relationId)!;
-      return this.analyzeRelationStep(relation);
-    });
-
-    // Tính toán thế hệ và nhánh
-    let generation = 0;
-    let lineage: LineageType | null = null;
-    let currentPersonId = this.userId;
-
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      const relation = this.relations.find(r => r.id === relationPath[i])!;
-      
-      // Xác định người tiếp theo trong đường đi
-      const nextPersonId = relation.personAId === currentPersonId 
-        ? relation.personBId 
-        : relation.personAId;
-
-      // Cập nhật thế hệ
-      if (step.type === RelationType.PARENT) {
-        if (relation.childId === currentPersonId) {
-          generation++; // Đi lên thế hệ trên
-        } else {
-          generation--; // Đi xuống thế hệ dưới
-        }
-      }
-
-      // Xác định nhánh nội/ngoại ở bước đầu tiên
-      if (i === 0 && step.type === RelationType.PARENT && relation.childId === currentPersonId) {
-        const parent = this.persons.find(p => p.id === nextPersonId);
-        if (parent) {
-          // Kiểm tra xem đây là cha hay mẹ
-          const userPerson = this.persons.find(p => p.id === this.userId);
-          if (userPerson) {
-            lineage = this.determineLineage(parent, userPerson);
-          }
-        }
-      }
-
-      currentPersonId = nextPersonId;
-    }
-
-    // Xác định danh xưng dựa trên phân tích
-    const targetPerson = this.persons.find(p => p.id === currentPersonId)!;
-    const addressing = this.determineAddressingTitle(steps, generation, lineage, targetPerson);
-
-    return addressing;
-  }
-
   /**
+
    * Phân tích một bước quan hệ
    */
   private analyzeRelationStep(relation: Relation): { type: RelationType; isOlder?: boolean } {
