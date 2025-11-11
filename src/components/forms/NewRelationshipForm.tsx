@@ -25,6 +25,8 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
   const [selectedLabel, setSelectedLabel] = useState<string>('');
   const [customLabel, setCustomLabel] = useState<string>('');
   const [familyId, setFamilyId] = useState<string>('');
+  // Optional subject anchor: who is the primary subject of this relation (helps disambiguation)
+  const [subjectId, setSubjectId] = useState<string>('');
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -52,7 +54,8 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
       const finalLabel = selectedLabel === '__other' ? (customLabel.trim() || undefined) : (selectedLabel || undefined);
       const options = {
         label: finalLabel,
-        familyId: familyId.trim() || undefined
+        familyId: familyId.trim() || undefined,
+        subjectId: subjectId || undefined
       };
 
       createRelationship(person.id, selectedPersonId, relationType, options);
@@ -169,6 +172,23 @@ export const NewRelationshipForm: React.FC<RelationshipFormProps> = ({
                 />
               )}
             </div>
+          </div>
+
+
+          {/* Subject anchor selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Người chủ đạo (điểm neo để phân định hướng)</label>
+            <select
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">Tự động (hệ thống sẽ chọn)</option>
+              <option value={person?.id}>{person?.name} (Người đang chọn)</option>
+              {availablePersons.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Family cluster */}
