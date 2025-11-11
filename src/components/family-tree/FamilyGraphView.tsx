@@ -46,7 +46,7 @@ export const FamilyGraphView: React.FC = () => {
     return Array.from(set.keys());
   }, [members]);
 
-  // Node positions (fallback grid layout)
+  // Node positions (fallback grid layout) — overridden by stored member.position if present
   const nodePositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
 
@@ -67,6 +67,13 @@ export const FamilyGraphView: React.FC = () => {
         const x = MARGIN + gi * (NODE_WIDTH + GAP_X);
         const y = MARGIN + idx * (NODE_HEIGHT + GAP_Y);
         positions[m.id] = { x, y };
+      }
+    });
+
+    // Override with any stored absolute positions on the person (persisted from React Flow)
+    members.forEach(m => {
+      if (m.position && typeof m.position.x === 'number' && typeof m.position.y === 'number') {
+        positions[m.id] = { x: Math.round(m.position.x), y: Math.round(m.position.y) };
       }
     });
 
