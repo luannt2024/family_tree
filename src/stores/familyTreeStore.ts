@@ -381,7 +381,8 @@ export const useFamilyTreeStore = create<FamilyTreeStore>()(
           member.name.toLowerCase().includes(lowerQuery) ||
           member.addressing.title.toLowerCase().includes(lowerQuery) ||
           member.addressing.explanation.toLowerCase().includes(lowerQuery) ||
-          (member.notes && member.notes.toLowerCase().includes(lowerQuery))
+          (member.notes && member.notes.toLowerCase().includes(lowerQuery)) ||
+          (member.families && member.families.join(' ').toLowerCase().includes(lowerQuery))
         );
       },
 
