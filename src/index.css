@@ -1,0 +1,262 @@
+/* Import Vietnamese fonts */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for Vietnamese Cultural Theme */
+:root {
+  /* Vietnamese traditional colors */
+  --vn-red: #da020e;        /* Đỏ cờ Việt Nam */
+  --vn-gold: #ffcd00;       /* Vàng sao */
+  --vn-jade: #00a86b;       /* Xanh ngọc */
+  --vn-lotus: #ffc0cb;      /* Hồng sen */
+  --vn-bamboo: #228b22;     /* Xanh tre */
+  --vn-lacquer: #8b0000;    /* Đỏ sơn mài */
+  
+  /* Toast theming */
+  --toast-bg: #ffffff;
+  --toast-color: #374151;
+  --toast-border: #e5e7eb;
+  
+  /* Vietnamese pattern backgrounds */
+  --bg-pattern-vn: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23da020e' fill-opacity='0.03'%3E%3Cpath d='M40 40c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm20-20c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.dark {
+  --toast-bg: #1f2937;
+  --toast-color: #f9fafb;
+  --toast-border: #374151;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  font-family: inherit;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.react-flow__controls {
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg;
+}
+
+.react-flow__controls button {
+  @apply bg-transparent border-none text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100;
+}
+
+.react-flow__minimap {
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg;
+}
+
+/* Vietnamese font family */
+body {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Family tree specific styles - Vietnamese theme */
+.family-tree-container {
+  @apply w-full h-full bg-gradient-to-br from-red-50 via-yellow-50 to-green-50 dark:from-gray-900 dark:via-red-900/10 dark:to-yellow-900/10;
+  background-image: var(--bg-pattern-vn);
+}
+
+.family-tree-toolbar {
+  @apply bg-gradient-to-r from-red-600 to-red-700 text-white border-b-4 border-yellow-400 px-4 py-3 shadow-lg;
+}
+
+.family-tree-toolbar h1 {
+  @apply text-white font-bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.family-tree-sidebar {
+  @apply bg-gradient-to-b from-white to-red-50 dark:from-gray-800 dark:to-red-900/20 border-r-4 border-yellow-400 w-80 overflow-y-auto shadow-lg;
+}
+
+.family-tree-main {
+  @apply flex-1 relative;
+}
+
+/* Vietnamese decorative elements */
+.vn-header-decoration {
+  background: linear-gradient(90deg, var(--vn-red) 0%, var(--vn-gold) 50%, var(--vn-red) 100%);
+  height: 4px;
+  width: 100%;
+}
+
+.vn-card-border {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, var(--vn-red), var(--vn-gold), var(--vn-jade)) border-box;
+}
+
+.vn-male-card {
+  @apply bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.vn-female-card {
+  @apply bg-gradient-to-br from-pink-50 to-red-100 border-2 border-red-300;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+/* Person card animations */
+.person-card-enter {
+  opacity: 0;
+  transform: scale(0.9) translateY(10px);
+}
+
+.person-card-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: all 0.3s ease-out;
+}
+
+.person-card-exit {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.person-card-exit-active {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+  transition: all 0.2s ease-in;
+}
+
+/* Connection lines */
+.family-connection-line {
+  stroke: #6b7280;
+  stroke-width: 2;
+  fill: none;
+}
+
+.family-connection-line.paternal {
+  stroke: #059669;
+}
+
+.family-connection-line.maternal {
+  stroke: #dc2626;
+}
+
+.family-connection-line.spouse {
+  stroke: #ec4899;
+  stroke-dasharray: 5,5;
+}
+
+.family-connection-line.sibling {
+  stroke: #3b82f6;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .family-tree-sidebar {
+    @apply w-full h-auto max-h-64 border-r-0 border-b border-gray-200 dark:border-gray-700;
+  }
+  
+  .person-card {
+    @apply min-w-[160px] max-w-[200px];
+  }
+}
+
+/* Print styles */
+@media print {
+  .family-tree-toolbar,
+  .family-tree-sidebar,
+  .react-flow__controls,
+  .react-flow__minimap {
+    display: none !important;
+  }
+  
+  .family-tree-main {
+    @apply w-full h-auto;
+  }
+  
+  .person-card {
+    @apply shadow-none border border-gray-300;
+  }
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus styles */
+.focus-visible:focus {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .person-card {
+    @apply border-2 border-black dark:border-white;
+  }
+  
+  .family-connection-line {
+    stroke: #000000;
+    stroke-width: 3;
+  }
+  
+  .dark .family-connection-line {
+    stroke: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
