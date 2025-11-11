@@ -134,6 +134,7 @@ export class AddressingEngine {
   private findRelationPath(fromId: string, toId: string): string[] | null {
     if (fromId === toId) return [];
 
+    // BFS over the precomputed tree adjacency when available so paths behave like a family tree
     const visited = new Set<string>();
     const queue: { personId: string; path: string[] }[] = [
       { personId: fromId, path: [] }
@@ -141,24 +142,38 @@ export class AddressingEngine {
 
     while (queue.length > 0) {
       const { personId, path } = queue.shift()!;
-      
+
       if (visited.has(personId)) continue;
       visited.add(personId);
 
-      if (personId === toId) {
-        return path;
+      if (personId === toId) return path;
+
+      // Use tree adjacency (parents/children/spouses) when present
+      const node = this.tree && this.tree[personId];
+      const neighbors: string[] = [];
+
+      if (node) {
+        neighbors.push(...(node.parents || []));
+        neighbors.push(...(node.children || []));
+        neighbors.push(...(node.spouses || []));
+      } else {
+        // Fallback: scan relations
+        const related = this.getRelatedPersons(personId);
+        related.forEach(r => neighbors.push(r.relatedPersonId));
       }
 
-      // Tìm tất cả người liên quan
-      const relatedPersons = this.getRelatedPersons(personId);
-      
-      for (const { relatedPersonId, relation } of relatedPersons) {
-        if (!visited.has(relatedPersonId)) {
-          queue.push({
-            personId: relatedPersonId,
-            path: [...path, relation.id]
-          });
-        }
+      for (const neighborId of neighbors) {
+        if (visited.has(neighborId)) continue;
+
+        // Find the relation object that links personId and neighborId
+        const relation = this.relations.find(r =>
+          (r.personAId === personId && r.personBId === neighborId) ||
+          (r.personBId === personId && r.personAId === neighborId)
+        );
+
+        if (!relation) continue; // defensive
+
+        queue.push({ personId: neighborId, path: [...path, relation.id] });
       }
     }
 
