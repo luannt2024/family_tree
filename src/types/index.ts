@@ -86,6 +86,9 @@ export interface Relation {
   parentId?: string;
   childId?: string;
 
+  // Ai là người chủ đạo trong quan hệ (tuỳ chọn) - giúp xác định hướng khi cần
+  subjectId?: string;
+
   // Thông tin mô tả chi tiết (ví dụ: 'Anh', 'Chị', 'Cô ruột', 'Thím', ...)
   label?: AddressingTitle | string;
 
