@@ -317,7 +317,7 @@ export class AddressingEngine {
    * Tạo thông tin danh xưng
    */
   private createAddressingInfo(
-    title: AddressingTitle,
+    title: AddressingTitle | string,
     explanation: string,
     lineage: LineageType | null,
     generation: number
@@ -338,7 +338,15 @@ export class AddressingEngine {
   /**
    * Tạo ví dụ câu chào
    */
-  private generateGreetingExamples(title: AddressingTitle): string[] {
+  private generateGreetingExamples(title: AddressingTitle | string): string[] {
+    // If title is a custom string (not in AddressingTitle enum) return a generic greeting
+    const enumValues = Object.values(AddressingTitle) as string[];
+    if (typeof title === 'string' && !enumValues.includes(title)) {
+      if (title.trim().length === 0) return [];
+      return [`Xin chào ${title}`];
+    }
+
+    const t = title as AddressingTitle;
     const greetings: Record<AddressingTitle, string[]> = {
       [AddressingTitle.BA]: ['Con chào Ba ạ', 'Ba có khỏe không ạ?'],
       [AddressingTitle.ME]: ['Con chào Mẹ ạ', 'Mẹ có khỏe không ạ?'],
@@ -366,13 +374,13 @@ export class AddressingEngine {
       [AddressingTitle.UNKNOWN]: []
     };
 
-    return greetings[title] || [];
+    return greetings[t] || [];
   }
 
   /**
    * Tính độ tin cậy của gợi ý
    */
-  private calculateConfidence(title: AddressingTitle, explanation: string): number {
+  private calculateConfidence(title: AddressingTitle | string, explanation: string): number {
     if (title === AddressingTitle.UNKNOWN) return 0.0;
     if (explanation.includes('Không xác định')) return 0.3;
     if (explanation.includes('?')) return 0.6;
