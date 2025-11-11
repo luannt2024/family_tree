@@ -114,6 +114,8 @@ export interface FamilyMember extends Person {
   addressing: AddressingInfo;
   relationPath: string[]; // Đường đi từ user đến person này
   directRelation?: RelationType;
+  directRelationLabel?: string; // Ghi nhãn quan hệ trực tiếp (nếu có)
+  relationFamilyId?: string; // family cluster id for the direct relation
   families?: string[]; // Danh sách các nhóm/gia đình (family cluster) người này thuộc về
 }
 
