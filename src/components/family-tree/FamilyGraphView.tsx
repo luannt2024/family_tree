@@ -24,7 +24,7 @@ const GAP_Y = 28;
 const MARGIN = 40;
 
 export const FamilyGraphView: React.FC = () => {
-  const { getFamilyMembers, relations, selectPerson, selectedPersonId, updatePerson } = useFamilyTreeStore();
+  const { getFamilyMembers, getClusterMap, relations, selectPerson, selectedPersonId, updatePerson } = useFamilyTreeStore();
   const members = getFamilyMembers();
   const [useForce, setUseForce] = useState(false);
 
@@ -38,13 +38,19 @@ export const FamilyGraphView: React.FC = () => {
 
   // Groups in deterministic order
   const groups = useMemo(() => {
+    const clusterMap = getClusterMap ? getClusterMap() : {};
+
+    // Build reverse map personId -> clusterId for quick lookup
+    const personToCluster: Record<string, string> = {};
+    Object.entries(clusterMap).forEach(([cid, ids]) => ids.forEach(id => { personToCluster[id] = cid; }));
+
     const set = new Map<string, number>();
     members.forEach(m => {
-      const g = groupOf(m) || 'ungrouped';
+      const g = personToCluster[m.id] || groupOf(m) || 'ungrouped';
       if (!set.has(g)) set.set(g, set.size);
     });
     return Array.from(set.keys());
-  }, [members]);
+  }, [members, getClusterMap]);
 
   // Node positions (fallback grid layout) — overridden by stored member.position if present
   const nodePositions = useMemo(() => {
@@ -86,16 +92,20 @@ export const FamilyGraphView: React.FC = () => {
     const pad = 28;
     const boxes: Record<string, { x: number; y: number; width: number; height: number; count: number }> = {};
 
-    // Attempt to use cluster map from members metadata if present
-    // members may include relationFamilyId or families array; fall back to grouping logic used above
-    const clusterMap: Record<string, string[]> = {};
-    members.forEach(m => {
-      const fam = groupOf(m);
-      if (fam && fam !== 'ungrouped') {
-        if (!clusterMap[fam]) clusterMap[fam] = [];
-        clusterMap[fam].push(m.id);
-      }
-    });
+    // Prefer store-provided cluster map when available so family clusters reflect relation.familyId and person.families
+    const storeMap = getClusterMap ? getClusterMap() : undefined;
+    const clusterMap: Record<string, string[]> = storeMap && Object.keys(storeMap).length > 0 ? storeMap : {};
+
+    if (!storeMap) {
+      // Fallback: build from members metadata (relationFamilyId/families)
+      members.forEach(m => {
+        const fam = groupOf(m);
+        if (fam && fam !== 'ungrouped') {
+          if (!clusterMap[fam]) clusterMap[fam] = [];
+          clusterMap[fam].push(m.id);
+        }
+      });
+    }
 
     Object.entries(clusterMap).forEach(([cid, ids]) => {
       const nodesInGroup = ids.map(id => members.find(m => m.id === id)).filter(Boolean) as FamilyMember[];
@@ -121,7 +131,7 @@ export const FamilyGraphView: React.FC = () => {
     });
 
     return boxes;
-  }, [groups, members, nodePositions]);
+  }, [groups, members, nodePositions, getClusterMap]);
 
   // Simple deterministic cluster color generator
   const getClusterColor = (id: string) => {
